@@ -9,22 +9,45 @@ namespace Editor_Lib
 {
     public static class EditorRapport
     {
-        public static void GenerateAnonymousRapport(string path)
+        public static void GenerateAnonymousRapport(string fullPath)
         {
-            StreamReader sr = new StreamReader(path);
+            
+        }
+
+        public static Dictionary<string, List<string>> CreateRapportDictonary(string fullPath)
+        {
+            Dictionary<string, List<string>> rapportDictonary = new Dictionary<string, List<string>>();
+            foreach (string line in File.ReadAllLines(fullPath))
+            {
+                // TR TD Search Criteria
+                if (true) {
+                    if (rapportDictonary.ContainsKey("All"))
+                    {
+                        rapportDictonary["All"].Add(line);
+                    }
+                    else
+                    {
+                        rapportDictonary.Add("All", new List<string>());
+                        rapportDictonary["All"].Add(line);
+                    }
+                }
+                
+            }
         }
 
         public static List<String> FilterStrings(List<string> strings, string startsWith, string endsWith)
         {
             List<string> filteredStrings = new List<string>();
 
-            foreach(string value in strings)
+            foreach (string value in strings)
             {
-                if(value.StartsWith && value.EndsWith)
+                if (value.StartsWith(startsWith) && value.EndsWith(endsWith))
                 {
-
+                    filteredStrings.Add(value.Substring(value.IndexOf(startsWith), value.LastIndexOf(endsWith) - value.IndexOf(startsWith)));
                 }
             }
+
+            return filteredStrings;
         }
     }
 }
