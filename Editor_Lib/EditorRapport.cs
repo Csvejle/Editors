@@ -15,11 +15,15 @@ namespace Editor_Lib
         public static Dictionary<string, List<string>> Rapport { get; private set; }
         public static Dictionary<string, List<string>> AnonymousRapport { get; private set; }
         public static Dictionary<string, string> AnonymousNodes { get; private set; }
-        public static Dictionary<string, string> AnonymousIps { get; private set; }
+        public static Dictionary<string, string> AnonymousExtra { get; private set; }
+        public static List<int> Counters = new List<int>() { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
+        public static List<string> Extensions = new List<string>() { "_BA", "_EXC", "_SYS", "_SQL", "_VM" };
+        public static bool DisableExtension = false;
 
         public static void GenerateAnonymousRapport(string fullPath)
         {
             Rapport = CreateRapportDictonary(fullPath);
+            AnonymousNodes = new Dictionary<string, string>();
             Dictionary<string, List<string>> copy = Rapport.ToDictionary(entry => entry.Key, entry => entry.Value.ToList());
             AnonymousRapport = GenerateAnonymousNames(copy);
 
@@ -34,54 +38,102 @@ namespace Editor_Lib
             Dictionary<string, string> ip3 = new Dictionary<string, string>();
             Dictionary<string, string> ip4 = new Dictionary<string, string>();
             // <old ip, new ip>
-            Dictionary<string, string> ips = new Dictionary<string, string>();
+            Dictionary<string, string> extra = new Dictionary<string, string>();
 
             for (int i = 0; i < keys.Count(); i++)
             {
                 if (!keys[i].Equals(""))
                 {
-                    string[] ips2 = keys[i].Split('.');
-
-
-                    if (!ip1.ContainsKey(ips2[0]))
+                    if (keys[i].Contains('.'))
                     {
-                        string newIp = "" + (v1);
-                        ip1.Add(ips2[0], newIp);
-                        v1++;
-                    }
+                        string[] ips2 = keys[i].Split('.');
 
-                    if (!ip2.ContainsKey(ips2[1]))
+
+                        if (!ip1.ContainsKey(ips2[0]))
+                        {
+                            string newIp = "" + (v1);
+                            ip1.Add(ips2[0], newIp);
+                            v1++;
+                        }
+
+                        if (!ip2.ContainsKey(ips2[1]))
+                        {
+                            string newIp = "" + (v2);
+                            ip2.Add(ips2[1], newIp);
+                            v2++;
+                        }
+
+                        if (!ip3.ContainsKey(ips2[2]))
+                        {
+                            string newIp = "" + (v3);
+                            ip3.Add(ips2[2], newIp);
+                            v3++;
+                        }
+
+                        if (!ip4.ContainsKey(ips2[3]))
+                        {
+                            string newIp = "" + (v4);
+                            ip4.Add(ips2[3], newIp);
+                            v4++;
+                        }
+
+                        string ip_string = ip1[ips2[0]] + "." + ip2[ips2[1]] + "." + ip3[ips2[2]] + "." + ip4[ips2[3]];
+
+                        extra.Add(keys[i], ip_string);
+                    }
+                    else
                     {
-                        string newIp = "" + (v2);
-                        ip2.Add(ips2[1], newIp);
-                        v2++;
+                        string oldValue = keys[i];
+
+                        bool found2 = false;
+                        string currentExtension = "_BA";
+
+                        foreach (string ext in Extensions)
+                        {
+                            if (keys[i].EndsWith(ext))
+                            {
+                                found2 = true;
+                                currentExtension = ext;
+                                break;
+                            }
+                        }
+
+                        if (found2 && !DisableExtension)
+                        {
+                            keys[i] = keys[i].Substring(0, keys[i].Length - currentExtension.Length);
+                        }
+
+                        List<int> indices = SearchChar(keys[i], '_');
+
+                        int currentIndex = 0;
+                        int k = 0;
+                        keys[i] = "";
+
+                        for (; k < Counters.Count && k < indices.Count; k++)
+                        {
+                            keys[i] += "" + Counters[k] + "_";
+                            currentIndex = indices[k];
+                            Counters[k] += 1;
+                        }
+
+                        keys[i] += Counters[k];
+
+                        if (!DisableExtension)
+                        {
+                            keys[i] += currentExtension;
+                        }
+
+                        Counters[k] += 1;
+
+                        extra.Add(oldValue, keys[i]);
                     }
-
-                    if (!ip3.ContainsKey(ips2[2]))
-                    {
-                        string newIp = "" + (v3);
-                        ip3.Add(ips2[2], newIp);
-                        v3++;
-                    }
-
-                    if (!ip4.ContainsKey(ips2[3]))
-                    {
-                        string newIp = "" + (v4);
-                        ip4.Add(ips2[3], newIp);
-                        v4++;
-                    }
-
-                    string ip_string = ip1[ips2[0]] + "." + ip2[ips2[1]] + "." + ip3[ips2[2]] + "." + ip4[ips2[3]];
-
-                    ips.Add(keys[i], ip_string);
                 }
             }
+            extra.Add("", "");
 
-            ips.Add("", "");
+            AnonymousExtra = extra;
 
-            AnonymousIps = ips;
-
-            ChangeNodesAndIpsText(fullPath, AnonymousRapport, AnonymousIps);
+            ChangeNodes(fullPath, AnonymousRapport, AnonymousExtra);
         }
 
 
@@ -162,10 +214,6 @@ namespace Editor_Lib
 
         public static Dictionary<string, List<string>> GenerateAnonymousNames(Dictionary<string, List<string>> rapport)
         {
-            List<int> counters = new List<int>() { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
-            List<string> extensions = new List<string>() { "_BA", "_EXC", "_SYS", "_SQL", "_VM"};
-            AnonymousNodes = new Dictionary<string, string>();
-
             string currentExtension = "";
             List<string> keys = rapport.Keys.ToList<string>();
             for (int i = 0; i < keys.Count(); i++)
@@ -177,7 +225,7 @@ namespace Editor_Lib
                     bool found2 = false;
                     currentExtension = "_BA";
 
-                    foreach (string ext in extensions)
+                    foreach (string ext in Extensions)
                     {
                         if (rapport[keys[i]][j].EndsWith(ext))
                         {
@@ -187,7 +235,7 @@ namespace Editor_Lib
                         }
                     }
 
-                    if (found2)
+                    if (found2 && !DisableExtension)
                     {
                         rapport[keys[i]][j] = rapport[keys[i]][j].Substring(0, rapport[keys[i]][j].Length - currentExtension.Length);
                     }
@@ -198,15 +246,21 @@ namespace Editor_Lib
                     int k = 0;
                     rapport[keys[i]][j] = "";
 
-                    for (; k < counters.Count && k < indices.Count; k++)
+                    for (; k < Counters.Count && k < indices.Count; k++)
                     {
-                        rapport[keys[i]][j] += "" + counters[k] + "_";
+                        rapport[keys[i]][j] += "" + Counters[k] + "_";
                         currentIndex = indices[k];
-                        counters[k] += 1;
+                        Counters[k] += 1;
                     }
 
-                    rapport[keys[i]][j] += counters[k] + currentExtension;
-                    counters[k] += 1;
+                    rapport[keys[i]][j] += Counters[k];
+                    
+                    if(!DisableExtension)
+                    {
+                        rapport[keys[i]][j] += currentExtension;
+                    }
+
+                    Counters[k] += 1;
 
                     if (!AnonymousNodes.ContainsKey(oldNode))
                     {
@@ -260,7 +314,7 @@ namespace Editor_Lib
 
 
 
-        private static void ChangeNodesAndIpsText(string fullPath, Dictionary<string, List<string>> rapport, Dictionary<string, string> ips)
+        private static void ChangeNodes(string fullPath, Dictionary<string, List<string>> rapport, Dictionary<string, string> ips)
         {
             List<string> file = new List<string>();
 
@@ -269,46 +323,43 @@ namespace Editor_Lib
                 file.Add(line);
             }
 
-            for(int i = 0; i < file.Count(); i++)
+            for (int i = 0; i < file.Count(); i++)
             {
                 string trimmedLine = file[i].Trim();
-                foreach(string startsWith in StartsWithList)
-                if (trimmedLine.StartsWith(startsWith) && trimmedLine.EndsWith(EndsWith))
-                {
-                    int firstIndex = file[i].IndexOf(startsWith);
-                    int lastIndex = file[i].LastIndexOf(EndsWith);
-                    string oldValue = file[i].Substring(firstIndex + startsWith.Length, lastIndex - firstIndex - startsWith.Length);
-                    string newValue = null;
+                foreach (string startsWith in StartsWithList)
+                    if (trimmedLine.StartsWith(startsWith) && trimmedLine.EndsWith(EndsWith))
+                    {
+                        int firstIndex = file[i].IndexOf(startsWith);
+                        int lastIndex = file[i].LastIndexOf(EndsWith);
+                        string oldValue = file[i].Substring(firstIndex + startsWith.Length, lastIndex - firstIndex - startsWith.Length);
+                        string newValue = null;
 
-                    if (AnonymousNodes.ContainsKey(oldValue))
-                    {
-                        newValue = AnonymousNodes[oldValue];
-                    }
+                        if (AnonymousNodes.ContainsKey(oldValue))
+                        {
+                            newValue = AnonymousNodes[oldValue];
+                        }
 
-                    if (AnonymousIps.ContainsKey(oldValue))
-                    {
-                        newValue = AnonymousIps[oldValue];
+                        if (AnonymousExtra.ContainsKey(oldValue))
+                        {
+                            newValue = AnonymousExtra[oldValue];
+                        }
+
+                        if (newValue != null)
+                        {
+                            int index = i;
+                            file[i] = file[i].Substring(0, firstIndex + startsWith.Length) + newValue + file[i].Substring(lastIndex, EndsWith.Length);
+                        }
                     }
-                    
-                    if(newValue != null)
-                    {
-                        int index = i;
-                        file[i] = file[i].Substring(0, firstIndex + startsWith.Length) + newValue + file[i].Substring(lastIndex, EndsWith.Length);
-                    }
-                }           
             }
 
-            string path = @"c:\temp\MyTest.txt";
-            if (!File.Exists(path))
+            File.Delete(fullPath);
+            StreamWriter sw = File.CreateText(fullPath);
+
+            foreach (string line in file)
             {
-                using (StreamWriter sw = File.CreateText(path))
-                {
-                    foreach(string line in file)
-                    {
-                        sw.WriteLine(line);
-                    }
-                }
+                sw.WriteLine(line);
             }
+
         }
     }
 }

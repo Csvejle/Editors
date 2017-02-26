@@ -24,14 +24,27 @@ namespace RapportViewer
         public MainWindow()
         {
             InitializeComponent();
-            string fullPath = @"C:\Users\rprii\Downloads\Wizards _ RTE - Node Backup Report  2_17_2017 9_30 AM created on 17_02_2017 09_31_16 (1)\Notification.html";
 
-            EditorRapport.GenerateAnonymousRapport(fullPath);
-            Dictionary<string, List<string>> crd = EditorRapport.AnonymousRapport;
-            //Dictionary<string, List<string>> crd = EditorRapport.Rapport;
+            cb_DisableExtension.IsThreeState = false;
+        }
 
-            lb_Keys.ItemsSource = EditorRapport.AnonymousIps;
-            lb_Values.ItemsSource = EditorRapport.AnonymousNodes;
+        private void btn_ChangeFile_Click(object sender, RoutedEventArgs e)
+        {
+            var ofd = new Microsoft.Win32.OpenFileDialog();
+            var result = ofd.ShowDialog();
+            if (result == true)
+            {
+                lb_File.Content = ofd.FileName;
+            }
+        }
+
+        private void btn_Anonymize_Click(object sender, RoutedEventArgs e)
+        {
+            if(lb_File.Content != null)
+            {
+                EditorRapport.DisableExtension = (bool)cb_DisableExtension.IsChecked;
+                EditorRapport.GenerateAnonymousRapport((string) lb_File.Content);
+            }
         }
     }
 }

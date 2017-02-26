@@ -5,7 +5,7 @@ VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Editor_Lib", "Editor_Lib\Editor_Lib.csproj", "{8D83EAA5-C042-49BA-A429-D5A3642A531B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RapportViewer", "RapportViewer\RapportViewer.csproj", "{91B64E40-4B96-46EB-A112-747A82B694C0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RapportEditor", "RapportViewer\RapportEditor.csproj", "{91B64E40-4B96-46EB-A112-747A82B694C0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
