@@ -7,7 +7,7 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="800" Width="700">
     <Grid>
-        <ListBox x:Name="lb_RapportContent" HorizontalAlignment="Left" Height="749" Margin="10,10,0,0" VerticalAlignment="Top" Width="672"/>
-
+        <ListBox x:Name="lb_Keys" HorizontalAlignment="Left" Height="749" Margin="10,10,0,0" VerticalAlignment="Top" Width="672"/>
+        <ListBox x:Name="lb_Values" HorizontalAlignment="Left" Height="749" Margin="10,10,0,0" VerticalAlignment="Top" Width="672"/>        
     </Grid>
 </Window>

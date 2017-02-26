@@ -25,7 +25,13 @@ namespace RapportViewer
         {
             InitializeComponent();
             string fullPath = @"C:\Users\rprii\Downloads\Wizards _ RTE - Node Backup Report  2_17_2017 9_30 AM created on 17_02_2017 09_31_16 (1)\Notification.html";
-            lb_RapportContent.ItemsSource = EditorRapport.CreateRapportDictonary(fullPath)["All"];
+
+            EditorRapport.GenerateAnonymousRapport(fullPath);
+            Dictionary<string, List<string>> crd = EditorRapport.AnonymousRapport;
+            //Dictionary<string, List<string>> crd = EditorRapport.Rapport;
+
+            lb_Keys.ItemsSource = crd.Keys.ToList();
+            lb_Values.ItemsSource = crd.Values.ToList();
         }
     }
 }
