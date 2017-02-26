@@ -9,16 +9,18 @@ namespace Editor_Lib
 {
     public static class EditorRapport
     {
-        private readonly static string StartsWith = @"<td valign=""middle"" style=""line-height: 24px; font-size: 14px; word-break: break-word; -webkit-hyphens: none; -moz-hyphens: none; hyphens: none; border-collapse: collapse !important; vertical-align: top; text-align: left; color: #222; font-family: Helvetica,Arial,sans-serif; font-weight: 400; background-color: #e2e2e2; margin: 0; padding: 3px;"" height=""24"" align=""left"">";
+        private readonly static List<string> StartsWithList = new List<string>() { @"<td valign=""middle"" style=""line-height: 24px; font-size: 14px; word-break: break-word; -webkit-hyphens: none; -moz-hyphens: none; hyphens: none; border-collapse: collapse !important; vertical-align: top; text-align: left; color: #222; font-family: Helvetica,Arial,sans-serif; font-weight: 400; background-color: #e2e2e2; margin: 0; padding: 3px;"" height=""24"" align=""left"">", @"<td valign=""middle"" style=""line-height: 24px; font-size: 14px; word-break: break-word; -webkit-hyphens: none; -moz-hyphens: none; hyphens: none; border-collapse: collapse !important; vertical-align: top; text-align: left; color: #222; font-family: Helvetica,Arial,sans-serif; font-weight: 400; background-color: #f3f3f3; margin: 0; padding: 3px;"" height=""24"" align=""left"">" };
         private readonly static string EndsWith = @"</td>&#13;";
         private readonly static string SplitString = @"<tr style=""vertical-align: top; text-align: left; padding: 0;"" align=""left"">";
         public static Dictionary<string, List<string>> Rapport { get; private set; }
         public static Dictionary<string, List<string>> AnonymousRapport { get; private set; }
+        public static Dictionary<string, string> AnonymousNodes { get; private set; }
+        public static Dictionary<string, string> AnonymousIps { get; private set; }
 
         public static void GenerateAnonymousRapport(string fullPath)
         {
             Rapport = CreateRapportDictonary(fullPath);
-            Dictionary<string, List<string>>  copy = Rapport.ToDictionary(entry => entry.Key, entry => entry.Value.ToList());
+            Dictionary<string, List<string>> copy = Rapport.ToDictionary(entry => entry.Key, entry => entry.Value.ToList());
             AnonymousRapport = GenerateAnonymousNames(copy);
 
             int v1 = 1, v2 = 1, v3 = 1, v4 = 1;
@@ -26,13 +28,60 @@ namespace Editor_Lib
             // Extra/IP
             List<String> keys = AnonymousRapport.Keys.ToList();
 
+            // <old partId, new partId>
+            Dictionary<string, string> ip1 = new Dictionary<string, string>();
+            Dictionary<string, string> ip2 = new Dictionary<string, string>();
+            Dictionary<string, string> ip3 = new Dictionary<string, string>();
+            Dictionary<string, string> ip4 = new Dictionary<string, string>();
+            // <old ip, new ip>
+            Dictionary<string, string> ips = new Dictionary<string, string>();
+
             for (int i = 0; i < keys.Count(); i++)
             {
-                if(!AnonymousRapport[keys[i]].Equals(""))
+                if (!keys[i].Equals(""))
                 {
+                    string[] ips2 = keys[i].Split('.');
 
+
+                    if (!ip1.ContainsKey(ips2[0]))
+                    {
+                        string newIp = "" + (v1);
+                        ip1.Add(ips2[0], newIp);
+                        v1++;
+                    }
+
+                    if (!ip2.ContainsKey(ips2[1]))
+                    {
+                        string newIp = "" + (v2);
+                        ip2.Add(ips2[1], newIp);
+                        v2++;
+                    }
+
+                    if (!ip3.ContainsKey(ips2[2]))
+                    {
+                        string newIp = "" + (v3);
+                        ip3.Add(ips2[2], newIp);
+                        v3++;
+                    }
+
+                    if (!ip4.ContainsKey(ips2[3]))
+                    {
+                        string newIp = "" + (v4);
+                        ip4.Add(ips2[3], newIp);
+                        v4++;
+                    }
+
+                    string ip_string = ip1[ips2[0]] + "." + ip2[ips2[1]] + "." + ip3[ips2[2]] + "." + ip4[ips2[3]];
+
+                    ips.Add(keys[i], ip_string);
                 }
             }
+
+            ips.Add("", "");
+
+            AnonymousIps = ips;
+
+            ChangeNodesAndIpsText(fullPath, AnonymousRapport, AnonymousIps);
         }
 
 
@@ -40,37 +89,42 @@ namespace Editor_Lib
         {
             Dictionary<string, List<string>> rapportDictonary = new Dictionary<string, List<string>>();
 
-            bool isNewSchedule = false;
+            bool isNode = false;
+            bool isIp = false;
             string prevLine = "empty";
 
             foreach (string line in File.ReadAllLines(fullPath))
             {
-                string trimmedLine = line.Trim();
-
-                if (!prevLine.Equals("empty") && isNewSchedule && trimmedLine.StartsWith(StartsWith) && trimmedLine.EndsWith(EndsWith))
+                foreach (string startsWith in StartsWithList)
                 {
-                    string key = trimmedLine.Substring(StartsWith.Length, trimmedLine.Length - StartsWith.Length - EndsWith.Length);
+                    string trimmedLine = line.Trim();
 
-                    if (!rapportDictonary.ContainsKey(key))
+                    if (trimmedLine.StartsWith(SplitString) && !isNode && !isIp)
                     {
-                        rapportDictonary[key] = new List<string>();
+                        isNode = true;
                     }
-
-                    rapportDictonary[key].Add(prevLine);
-
-                    prevLine = "empty";
-                    isNewSchedule = false;
-                }
-                else
-                {
-                    if (isNewSchedule && trimmedLine.StartsWith(StartsWith) && trimmedLine.EndsWith(EndsWith))
+                    else
                     {
-                        prevLine = trimmedLine;
-                    }
+                        if (isNode && trimmedLine.StartsWith(startsWith) && trimmedLine.EndsWith(EndsWith))
+                        {
+                            prevLine = trimmedLine;
+                            isNode = false;
+                            isIp = true;
+                        }
+                        else
+                        {
+                            if (isIp && trimmedLine.StartsWith(startsWith) && trimmedLine.EndsWith(EndsWith))
+                            {
+                                isIp = false;
+                                string key = trimmedLine.Substring(startsWith.Length, trimmedLine.Length - startsWith.Length - EndsWith.Length);
 
-                    if (trimmedLine.StartsWith(SplitString) && !isNewSchedule)
-                    {
-                        isNewSchedule = true;
+                                if (!rapportDictonary.ContainsKey(key))
+                                {
+                                    rapportDictonary[key] = new List<string>();
+                                }
+                                rapportDictonary[key].Add(prevLine);
+                            }
+                        }
                     }
                 }
             }
@@ -78,7 +132,7 @@ namespace Editor_Lib
             List<string> keys = rapportDictonary.Keys.ToList<string>();
             for (int i = 0; i < keys.Count(); i++)
             {
-                rapportDictonary[keys[i]] = FilterStrings(rapportDictonary[keys[i]], StartsWith, EndsWith);
+                rapportDictonary[keys[i]] = FilterStrings(rapportDictonary[keys[i]], StartsWithList, EndsWith);
             }
 
             bool found = false;
@@ -109,7 +163,8 @@ namespace Editor_Lib
         public static Dictionary<string, List<string>> GenerateAnonymousNames(Dictionary<string, List<string>> rapport)
         {
             List<int> counters = new List<int>() { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
-            List<string> extensions = new List<string>() { "_BA", "_EXC", "_SYS", "_SQL", "_VM" };
+            List<string> extensions = new List<string>() { "_BA", "_EXC", "_SYS", "_SQL", "_VM"};
+            AnonymousNodes = new Dictionary<string, string>();
 
             string currentExtension = "";
             List<string> keys = rapport.Keys.ToList<string>();
@@ -117,6 +172,8 @@ namespace Editor_Lib
             {
                 for (int j = 0; j < rapport[keys[i]].Count; j++)
                 {
+                    string oldNode = rapport[keys[i]][j];
+
                     bool found2 = false;
                     currentExtension = "_BA";
 
@@ -124,8 +181,8 @@ namespace Editor_Lib
                     {
                         if (rapport[keys[i]][j].EndsWith(ext))
                         {
-                            currentExtension = ext;
                             found2 = true;
+                            currentExtension = ext;
                             break;
                         }
                     }
@@ -150,6 +207,11 @@ namespace Editor_Lib
 
                     rapport[keys[i]][j] += counters[k] + currentExtension;
                     counters[k] += 1;
+
+                    if (!AnonymousNodes.ContainsKey(oldNode))
+                    {
+                        AnonymousNodes.Add(oldNode, rapport[keys[i]][j]);
+                    }
                 }
             }
 
@@ -157,17 +219,22 @@ namespace Editor_Lib
             return rapport;
         }
 
-        public static List<String> FilterStrings(List<string> strings, string startsWith, string endsWith)
+
+
+        public static List<String> FilterStrings(List<string> strings, List<string> startsWithList, string endsWith)
         {
             List<string> filteredStrings = new List<string>();
 
             foreach (string value in strings)
             {
-                string filteredValue = value.Trim();
-
-                if (filteredValue.StartsWith(startsWith) && filteredValue.EndsWith(endsWith))
+                foreach (string startsWith in startsWithList)
                 {
-                    filteredStrings.Add(filteredValue.Substring(startsWith.Length, filteredValue.Length - startsWith.Length - endsWith.Length));
+                    string filteredValue = value.Trim();
+
+                    if (filteredValue.StartsWith(startsWith) && filteredValue.EndsWith(endsWith))
+                    {
+                        filteredStrings.Add(filteredValue.Substring(startsWith.Length, filteredValue.Length - startsWith.Length - endsWith.Length));
+                    }
                 }
             }
 
@@ -189,6 +256,59 @@ namespace Editor_Lib
             }
 
             return indices;
+        }
+
+
+
+        private static void ChangeNodesAndIpsText(string fullPath, Dictionary<string, List<string>> rapport, Dictionary<string, string> ips)
+        {
+            List<string> file = new List<string>();
+
+            foreach (string line in File.ReadAllLines(fullPath))
+            {
+                file.Add(line);
+            }
+
+            for(int i = 0; i < file.Count(); i++)
+            {
+                string trimmedLine = file[i].Trim();
+                foreach(string startsWith in StartsWithList)
+                if (trimmedLine.StartsWith(startsWith) && trimmedLine.EndsWith(EndsWith))
+                {
+                    int firstIndex = file[i].IndexOf(startsWith);
+                    int lastIndex = file[i].LastIndexOf(EndsWith);
+                    string oldValue = file[i].Substring(firstIndex + startsWith.Length, lastIndex - firstIndex - startsWith.Length);
+                    string newValue = null;
+
+                    if (AnonymousNodes.ContainsKey(oldValue))
+                    {
+                        newValue = AnonymousNodes[oldValue];
+                    }
+
+                    if (AnonymousIps.ContainsKey(oldValue))
+                    {
+                        newValue = AnonymousIps[oldValue];
+                    }
+                    
+                    if(newValue != null)
+                    {
+                        int index = i;
+                        file[i] = file[i].Substring(0, firstIndex + startsWith.Length) + newValue + file[i].Substring(lastIndex, EndsWith.Length);
+                    }
+                }           
+            }
+
+            string path = @"c:\temp\MyTest.txt";
+            if (!File.Exists(path))
+            {
+                using (StreamWriter sw = File.CreateText(path))
+                {
+                    foreach(string line in file)
+                    {
+                        sw.WriteLine(line);
+                    }
+                }
+            }
         }
     }
 }

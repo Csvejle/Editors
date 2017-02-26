@@ -30,8 +30,8 @@ namespace RapportViewer
             Dictionary<string, List<string>> crd = EditorRapport.AnonymousRapport;
             //Dictionary<string, List<string>> crd = EditorRapport.Rapport;
 
-            lb_Keys.ItemsSource = crd.Keys.ToList();
-            lb_Values.ItemsSource = crd.Values.ToList();
+            lb_Keys.ItemsSource = EditorRapport.AnonymousIps;
+            lb_Values.ItemsSource = EditorRapport.AnonymousNodes;
         }
     }
 }
